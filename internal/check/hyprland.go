@@ -3,11 +3,12 @@ package check
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/vam0laa/vamola-doctor/internal/i18n"
 )
 
 type hyprMonitor struct {
@@ -18,8 +19,8 @@ type hyprMonitor struct {
 	Scale       float64 `json:"scale"`
 }
 
-// fractionalLogical ölçek, mantıksal çözünürlüğü tam sayıya bölmüyorsa true döner.
-// Böyle ölçeklerde Hyprland değeri en yakın temiz ölçeğe yuvarlar ya da görüntü bulanıklaşır.
+// fractionalLogical reports whether the scale yields a non-integer logical
+// resolution. Hyprland then rounds to the nearest clean scale or looks blurry.
 func fractionalLogical(m hyprMonitor) bool {
 	if m.Scale <= 0 {
 		return false
@@ -28,13 +29,14 @@ func fractionalLogical(m hyprMonitor) bool {
 	return math.Abs(w-math.Round(w)) > 0.01 || math.Abs(h-math.Round(h)) > 0.01
 }
 
-// Hyprland oturum, config hataları ve monitör ölçeğini denetler.
+// Hyprland checks the session, config errors and monitor scale.
 func Hyprland(ctx context.Context, _ Options) Result {
+	t := i18n.T
 	if _, err := exec.LookPath("hyprctl"); err != nil {
-		return Result{Name: "hyprland", Status: Skip, Summary: "hyprctl kurulu değil"}
+		return Result{Name: "hyprland", Status: Skip, Summary: t("hypr.nocmd")}
 	}
 	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") == "" {
-		return Result{Name: "hyprland", Status: Skip, Summary: "Hyprland oturumunda değilsin"}
+		return Result{Name: "hyprland", Status: Skip, Summary: t("hypr.nosession")}
 	}
 	r := Result{Name: "hyprland", Status: OK}
 
@@ -43,37 +45,37 @@ func Hyprland(ctx context.Context, _ Options) Result {
 			Tag string `json:"tag"`
 		}
 		if json.Unmarshal([]byte(out), &v) == nil && v.Tag != "" {
-			r.Details = append(r.Details, "sürüm: "+v.Tag)
+			r.Details = append(r.Details, t("hypr.version", v.Tag))
 		}
 	}
 
 	if out, _ := run(ctx, "hyprctl", "configerrors"); strings.TrimSpace(out) != "" {
 		r.Status = Fail
-		lines := strings.Split(out, "\n")
-		r.Details = append(r.Details, fmt.Sprintf("config hataları (%d):", len(lines)))
-		for i, l := range lines {
+		ls := strings.Split(out, "\n")
+		r.Details = append(r.Details, t("hypr.cfg_errs", len(ls)))
+		for i, l := range ls {
 			if i >= 5 {
-				r.Details = append(r.Details, "  … `hyprctl configerrors` ile tamamını gör")
+				r.Details = append(r.Details, t("hypr.cfg_more"))
 				break
 			}
 			r.Details = append(r.Details, "  "+strings.TrimSpace(l))
 		}
 	} else {
-		r.Details = append(r.Details, "config: hata yok")
+		r.Details = append(r.Details, t("hypr.cfg_ok"))
 	}
 
 	out, err := run(ctx, "hyprctl", "monitors", "-j")
 	if err != nil {
 		r.Status = worst(r.Status, Warn)
-		r.Details = append(r.Details, "monitör bilgisi okunamadı")
+		r.Details = append(r.Details, t("hypr.mon_fail"))
 	} else {
 		var ms []hyprMonitor
 		if json.Unmarshal([]byte(out), &ms) == nil {
 			for _, m := range ms {
-				line := fmt.Sprintf("%s: %dx%d@%.0fHz, ölçek %.2f", m.Name, m.Width, m.Height, m.RefreshRate, m.Scale)
+				line := t("hypr.mon", m.Name, m.Width, m.Height, m.RefreshRate, m.Scale)
 				if fractionalLogical(m) {
 					r.Status = worst(r.Status, Warn)
-					line += "  ⚠ kesirli mantıksal çözünürlük (bulanık olabilir)"
+					line += t("hypr.frac")
 				}
 				r.Details = append(r.Details, line)
 			}
@@ -82,11 +84,11 @@ func Hyprland(ctx context.Context, _ Options) Result {
 
 	switch r.Status {
 	case OK:
-		r.Summary = "Hyprland sağlıklı, config temiz"
+		r.Summary = t("hypr.ok")
 	case Warn:
-		r.Summary = "monitör ölçeği gözden geçirilmeli"
+		r.Summary = t("hypr.warn")
 	default:
-		r.Summary = "Hyprland config hataları var"
+		r.Summary = t("hypr.fail")
 	}
 	return r
 }

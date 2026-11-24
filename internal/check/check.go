@@ -1,5 +1,5 @@
-// Package check, vamola-doctor'un sağlık kontrollerini içerir.
-// Her kontrol salt okunurdur: sistemi hiçbir şekilde değiştirmez.
+// Package check contains the health checks of vamola-doctor.
+// Every check is read-only: it never changes anything on the system.
 package check
 
 import (
@@ -7,9 +7,11 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/vam0laa/vamola-doctor/internal/i18n"
 )
 
-// Status bir kontrolün sonucunu belirtir. Büyük değer = daha kötü (Skip hariç).
+// Status is the outcome of a check. A higher value is worse (except Skip).
 type Status int
 
 const (
@@ -32,10 +34,10 @@ func (s Status) String() string {
 	}
 }
 
-// MarshalText JSON çıktısında "ok", "warn" gibi okunur metin verir.
+// MarshalText makes JSON output use "ok", "warn", ... instead of numbers.
 func (s Status) MarshalText() ([]byte, error) { return []byte(s.String()), nil }
 
-// Result tek bir modülün çıktısıdır.
+// Result is the output of a single module.
 type Result struct {
 	Name    string   `json:"name"`
 	Status  Status   `json:"status"`
@@ -43,33 +45,36 @@ type Result struct {
 	Details []string `json:"details,omitempty"`
 }
 
-// Options komut satırından gelen ayarlardır.
+// Options carries command line settings into the checks.
 type Options struct {
-	Speed bool // indirme hızı testi (≈10 MB indirir), varsayılan kapalı
+	Speed bool // run a download speed test (~10 MB); off by default
 }
 
-// Check bir kontrol modülüdür.
+// Check is one module.
 type Check struct {
-	Name  string
-	Title string
-	Run   func(ctx context.Context, o Options) Result
+	Name     string
+	TitleKey string
+	Run      func(ctx context.Context, o Options) Result
 }
 
-// All tüm modülleri çalıştırma sırasıyla döndürür.
+// Title returns the module title in the active language.
+func (c Check) Title() string { return i18n.T(c.TitleKey) }
+
+// All returns every module in execution order.
 func All() []Check {
 	return []Check{
-		{"network", "Ağ", Network},
-		{"disk", "Disk", Disk},
-		{"smart", "Disk sağlığı (SMART)", SMART},
-		{"memory", "Bellek", Memory},
-		{"services", "Servisler", Services},
-		{"journal", "Sistem günlüğü", Journal},
-		{"hyprland", "Hyprland", Hyprland},
-		{"packages", "Paketler", Packages},
+		{"network", "title.network", Network},
+		{"disk", "title.disk", Disk},
+		{"smart", "title.smart", SMART},
+		{"memory", "title.memory", Memory},
+		{"services", "title.services", Services},
+		{"journal", "title.journal", Journal},
+		{"hyprland", "title.hyprland", Hyprland},
+		{"packages", "title.packages", Packages},
 	}
 }
 
-// worst sonuçların en kötüsünü döndürür (Skip sayılmaz).
+// worst returns the more severe of two statuses (Skip is ignored).
 func worst(a, b Status) Status {
 	if b == Skip {
 		return a
@@ -80,10 +85,21 @@ func worst(a, b Status) Status {
 	return a
 }
 
-// run harici bir komutu 10 sn zaman aşımıyla çalıştırır.
+// run executes an external command with a 10 second timeout.
 func run(ctx context.Context, name string, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	out, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
 	return strings.TrimSpace(string(out)), err
+}
+
+// lines splits s into trimmed, non-empty lines.
+func lines(s string) []string {
+	var out []string
+	for _, l := range strings.Split(s, "\n") {
+		if l = strings.TrimSpace(l); l != "" {
+			out = append(out, l)
+		}
+	}
+	return out
 }

@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/vam0laa/vamola-doctor/internal/i18n"
 )
 
 type smartJSON struct {
@@ -31,7 +33,7 @@ type smartJSON struct {
 	} `json:"nvme_smart_health_information_log"`
 }
 
-// analyzeSmart smartctl -j çıktısını yorumlar. ok=false: aygıta erişilemedi.
+// analyzeSmart interprets `smartctl -j` output. ok=false means the device was not readable.
 func analyzeSmart(dev string, raw []byte) (st Status, line string, ok bool) {
 	var s smartJSON
 	if err := json.Unmarshal(raw, &s); err != nil {
@@ -48,10 +50,10 @@ func analyzeSmart(dev string, raw []byte) (st Status, line string, ok bool) {
 	st = OK
 	parts := []string{}
 	if s.SmartStatus.Passed {
-		parts = append(parts, "SMART: geçti")
+		parts = append(parts, i18n.T("smart.passed"))
 	} else {
 		st = Fail
-		parts = append(parts, "SMART: BAŞARISIZ")
+		parts = append(parts, i18n.T("smart.failed"))
 	}
 	if s.Temperature.Current > 0 {
 		parts = append(parts, fmt.Sprintf("%d°C", s.Temperature.Current))
@@ -60,17 +62,17 @@ func analyzeSmart(dev string, raw []byte) (st Status, line string, ok bool) {
 		}
 	}
 	if s.NVMe.PercentageUsed > 0 || s.NVMe.SpareThreshold > 0 {
-		parts = append(parts, fmt.Sprintf("aşınma %%%d", s.NVMe.PercentageUsed))
+		parts = append(parts, i18n.T("smart.wear", s.NVMe.PercentageUsed))
 		if s.NVMe.PercentageUsed >= 90 {
 			st = worst(st, Warn)
 		}
 		if s.NVMe.SpareLeft > 0 && s.NVMe.SpareLeft <= s.NVMe.SpareThreshold {
 			st = worst(st, Fail)
-			parts = append(parts, "yedek alan eşiğin altında")
+			parts = append(parts, i18n.T("smart.spare_low"))
 		}
 		if s.NVMe.MediaErrors > 0 {
 			st = worst(st, Warn)
-			parts = append(parts, fmt.Sprintf("%d medya hatası", s.NVMe.MediaErrors))
+			parts = append(parts, i18n.T("smart.media_err", s.NVMe.MediaErrors))
 		}
 	}
 	name := dev
@@ -80,10 +82,10 @@ func analyzeSmart(dev string, raw []byte) (st Status, line string, ok bool) {
 	return st, name + ": " + strings.Join(parts, ", "), true
 }
 
-// SMART NVMe/SATA disklerin sağlık durumunu okur. Çoğu sistemde root gerekir.
+// SMART reads the health of NVMe/SATA drives. Usually needs root.
 func SMART(ctx context.Context, _ Options) Result {
 	if _, err := exec.LookPath("smartctl"); err != nil {
-		return Result{Name: "smart", Status: Skip, Summary: "smartctl kurulu değil (smartmontools)"}
+		return Result{Name: "smart", Status: Skip, Summary: i18n.T("smart.nocmd")}
 	}
 	var devs []string
 	for _, pat := range []string{"/dev/nvme[0-9]n1", "/dev/sd[a-z]"} {
@@ -91,7 +93,7 @@ func SMART(ctx context.Context, _ Options) Result {
 		devs = append(devs, m...)
 	}
 	if len(devs) == 0 {
-		return Result{Name: "smart", Status: Skip, Summary: "disk bulunamadı"}
+		return Result{Name: "smart", Status: Skip, Summary: i18n.T("smart.nodisk")}
 	}
 	r := Result{Name: "smart", Status: OK}
 	denied := 0
@@ -106,15 +108,15 @@ func SMART(ctx context.Context, _ Options) Result {
 		r.Details = append(r.Details, line)
 	}
 	if denied == len(devs) {
-		return Result{Name: "smart", Status: Skip, Summary: "atlandı: root yetkisi gerekiyor (sudo vamola-doctor --only smart)"}
+		return Result{Name: "smart", Status: Skip, Summary: i18n.T("smart.denied")}
 	}
 	switch r.Status {
 	case OK:
-		r.Summary = "diskler sağlıklı"
+		r.Summary = i18n.T("smart.ok")
 	case Warn:
-		r.Summary = "disk için dikkat edilecek değer var"
+		r.Summary = i18n.T("smart.warn")
 	default:
-		r.Summary = "disk SMART testinden geçemedi"
+		r.Summary = i18n.T("smart.fail")
 	}
 	return r
 }

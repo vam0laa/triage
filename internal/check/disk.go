@@ -7,20 +7,23 @@ import (
 	"os"
 	"strings"
 	"syscall"
+
+	"github.com/vam0laa/vamola-doctor/internal/i18n"
 )
 
 var realFS = map[string]bool{"ext4": true, "btrfs": true, "xfs": true, "f2fs": true, "vfat": true, "ntfs3": true, "exfat": true}
 
-// Disk bağlı bölümlerin doluluğunu ve btrfs hata sayaçlarını denetler.
+// Disk checks filesystem usage and btrfs error counters.
 func Disk(ctx context.Context, _ Options) Result {
+	t := i18n.T
 	r := Result{Name: "disk", Status: OK}
 	f, err := os.Open("/proc/self/mounts")
 	if err != nil {
-		return Result{Name: "disk", Status: Skip, Summary: "bağlı bölümler okunamadı"}
+		return Result{Name: "disk", Status: Skip, Summary: t("disk.mounts_err")}
 	}
 	defer f.Close()
 
-	seen := map[string]bool{} // aynı cihaz birden çok kez bağlanabilir (btrfs alt birimleri)
+	seen := map[string]bool{} // one device can be mounted many times (btrfs subvolumes)
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		p := strings.Fields(sc.Text())
@@ -35,7 +38,7 @@ func Disk(ctx context.Context, _ Options) Result {
 		total := float64(st.Blocks) * float64(st.Bsize)
 		free := float64(st.Bavail) * float64(st.Bsize)
 		pct := (total - free) / total * 100
-		r.Details = append(r.Details, fmt.Sprintf("%-14s %-6s %5.1f%% dolu  (%s boş / %s)", p[1], p[2], pct, human(free), human(total)))
+		r.Details = append(r.Details, t("disk.row", p[1], p[2], pct, human(free), human(total)))
 		switch {
 		case pct >= 95:
 			r.Status = worst(r.Status, Fail)
@@ -46,30 +49,30 @@ func Disk(ctx context.Context, _ Options) Result {
 			out, err := run(ctx, "btrfs", "device", "stats", p[1])
 			switch {
 			case err != nil:
-				r.Details = append(r.Details, "  btrfs hata sayaçları: atlandı (root gerekir)")
+				r.Details = append(r.Details, "  "+t("disk.btrfs_skip"))
 			case btrfsErrors(out) > 0:
 				r.Status = worst(r.Status, Fail)
-				r.Details = append(r.Details, "  btrfs: sıfır olmayan hata sayacı var → `btrfs device stats "+p[1]+"`")
+				r.Details = append(r.Details, "  "+t("disk.btrfs_err", p[1]))
 			default:
-				r.Details = append(r.Details, "  btrfs hata sayaçları: temiz")
+				r.Details = append(r.Details, "  "+t("disk.btrfs_ok"))
 			}
 		}
 	}
 	if len(seen) == 0 {
-		return Result{Name: "disk", Status: Skip, Summary: "denetlenecek bölüm bulunamadı"}
+		return Result{Name: "disk", Status: Skip, Summary: t("disk.none")}
 	}
 	switch r.Status {
 	case OK:
-		r.Summary = "tüm bölümlerde yeterli alan var"
+		r.Summary = t("disk.ok")
 	case Warn:
-		r.Summary = "bir bölüm dolmaya yakın (%85+)"
+		r.Summary = t("disk.warn")
 	default:
-		r.Summary = "disk sorunu: bölüm dolu (%95+) ya da btrfs hatası"
+		r.Summary = t("disk.fail")
 	}
 	return r
 }
 
-// btrfsErrors `btrfs device stats` çıktısındaki sıfır olmayan sayaçları sayar.
+// btrfsErrors counts non-zero counters in `btrfs device stats` output.
 func btrfsErrors(out string) int {
 	n := 0
 	for _, l := range strings.Split(out, "\n") {

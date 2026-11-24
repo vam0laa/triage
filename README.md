@@ -1,26 +1,59 @@
 # vamola-doctor
 
-Arch Linux + Hyprland için tek komutluk, **salt okunur** sistem sağlık kontrolü.
-*A single-command, read-only health check for Arch Linux + Hyprland.*
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=archlinux&logoColor=white)](https://archlinux.org)
 
-Yeni kurduğun sistemde "her şey yolunda mı?" sorusuna saniyeler içinde cevap verir ve
-zararsız log gürültüsünü (ACPI, dbus...) gerçek hatalardan ayırır.
+**A read-only, one-command health check for Arch Linux + Hyprland.**
+
+Right after a fresh install you want to know: *is everything OK?* `vamola-doctor` answers in a
+couple of seconds, and it separates harmless log noise (ACPI, dbus...) from real problems.
+
+🇹🇷 [Türkçe README](README.tr.md)
 
 ```
-✔ Ağ  bağlantı sağlıklı, gecikme 11 ms
-✔ Disk  tüm bölümlerde yeterli alan var
-– Disk sağlığı (SMART)  atlandı: root yetkisi gerekiyor
-✔ Bellek  bellek rahat, %49 boş
-✔ Servisler  başarısız servis yok
-✔ Sistem günlüğü  bilinmeyen hata kaydı yok
-    16 zararsız bilinen uyarı yok sayıldı (ACPI, dbus...)
-✔ Hyprland  Hyprland sağlıklı, config temiz
-⚠ Paketler  paket temizliği önerilir
+╭──────────────────────────────────────────────────────────────────╮
+│                                                                  │
+│                       vamola-doctor v0.2.0                       │
+│                Arch Linux + Hyprland health check                │
+│                                                                  │
+╰──────────────────────────────────────────────────────────────────╯
 
-6 sorunsuz · 1 uyarı · 0 hata · 1 atlandı
+ ✔  Network                 connection healthy, latency 12 ms
+    ├─ latency: 12 ms (3/3 succeeded)
+    └─ DNS: working (2 ms)
+
+ ✔  Disk                    all filesystems have enough free space
+    ├─ /              btrfs    1.6% used  (937.8 GB free of 952.9 GB)
+    │   btrfs error counters: clean
+    └─ /boot          vfat    18.3% used  (834.6 MB free of 1022.0 MB)
+
+ ✔  Memory                  memory is fine, 47% free
+    ├─ RAM: 7.0 GB available of 14.9 GB (47% free)
+    └─ Swap: 0% in use (4.0 GB)
+
+ ✔  Hyprland                Hyprland is healthy, config is clean
+    ├─ version: v0.57.2
+    ├─ config: no errors
+    └─ eDP-1: 2880x1800@120Hz, scale 1.67
+
+ ⚠  Packages                package cleanup recommended
+    ├─ 6 orphan packages: cli11, extra-cmake-modules, html2markdown-debug, python-pillow, …
+    │   review, then remove with: pacman -Rns $(pacman -Qdtq)
+    ├─ pending updates: 0 (as of the last sync)
+    └─ package cache: 2.7 GB
+
+╭─ Summary ────────────────────────────────────────────────────────╮
+│                                                                  │
+│ healthy 4 · warnings 1 · errors 0 · skipped 0                    │
+│                                                                  │
+│ Health score  ██████████████████████░░  92%                      │
+│ Mostly good, a few things are worth a look.                      │
+│                                                                  │
+╰──────────────────────────────────────────────────────────────────╯
 ```
 
-## Kurulum
+## Install
 
 ```bash
 git clone https://github.com/vam0laa/vamola-doctor
@@ -29,54 +62,62 @@ go build -o vamola-doctor ./cmd/vamola-doctor
 sudo install -m755 vamola-doctor /usr/local/bin/
 ```
 
-Gereken: `go`. İsteğe bağlı: `smartmontools` (SMART modülü için).
+Requires `go`. Optional: `smartmontools` for the SMART module.
 
-## Kullanım
+## Usage
 
 ```bash
-vamola-doctor                    # tüm kontroller
-vamola-doctor --only disk,smart  # seçili modüller
-vamola-doctor --speed            # indirme hızı testi de yap (~10 MB indirir)
-vamola-doctor --json             # makine okunur çıktı
-vamola-doctor --list             # modülleri listele
-sudo vamola-doctor --only smart  # SMART root ister
+vamola-doctor                    # run every check
+vamola-doctor --only disk,smart  # only some modules
+vamola-doctor --speed            # also run a download speed test (~10 MB)
+vamola-doctor --json             # machine-readable output
+vamola-doctor --list             # list modules
+vamola-doctor --lang tr          # use Turkish for this run
+vamola-doctor --choose-lang      # pick the language again and save it
+sudo vamola-doctor --only smart  # SMART needs root
 ```
 
-**Çıkış kodu:** `0` temiz · `1` uyarı var · `2` hata var · `64` hatalı kullanım.
-Betiklerde ve cron/systemd zamanlayıcılarında kullanılabilir.
+On the first interactive run it asks for your language (English / Türkçe) and remembers it in
+`~/.config/vamola-doctor/lang`. Without a terminal (pipes, cron) it follows your system locale.
 
-## Modüller
+**Exit code:** `0` clean · `1` warnings · `2` errors · `64` bad usage — handy for scripts and timers.
 
-| Modül | Ne kontrol eder |
+## Modules
+
+| Module | What it checks |
 |---|---|
-| `network` | gecikme, DNS, (isteğe bağlı) indirme hızı |
-| `disk` | bölüm doluluğu (%85 uyarı, %95 hata), btrfs hata sayaçları |
-| `smart` | NVMe/SATA SMART durumu, sıcaklık, aşınma (root gerekir) |
-| `memory` | RAM ve swap |
-| `services` | başarısız systemd servisleri (sistem + kullanıcı) |
-| `journal` | bu boot'taki hata kayıtları, bilinen zararsızlar ayrılır |
-| `hyprland` | `hyprctl configerrors`, monitör ölçeği (kesirli çözünürlük uyarısı) |
-| `packages` | yetim paketler, bekleyen güncelleme, önbellek, `.pacnew` dosyaları |
+| `network` | latency, DNS, (optional) download speed |
+| `disk` | filesystem usage (warn 85%, fail 95%), btrfs error counters |
+| `smart` | NVMe/SATA SMART status, temperature, wear (needs root) |
+| `memory` | RAM and swap |
+| `services` | failed systemd units (system + user) |
+| `journal` | errors of the current boot; known harmless lines are filtered out |
+| `hyprland` | `hyprctl configerrors`, monitor scale (warns on fractional logical resolution) |
+| `packages` | orphans, pending updates, cache size, `.pacnew` files |
 
-## Güvenlik
+The **health score** counts a healthy module as 100%, a warning as 60% and an error as 0%;
+skipped modules are ignored.
 
-- Hiçbir şeyi **değiştirmez**, silmez, kurmaz. Sadece okur.
-- Root gerektiren kontrol yetki yoksa sessizce atlanır ve "atlandı" diye bildirilir.
-- `--speed` dışında ağa dosya indirmez; veri göndermez.
+## Safety
 
-## Yeni modül eklemek
+- It never changes, deletes or installs anything. Read-only.
+- A check that needs root is skipped and reported as such when you don't have it.
+- Nothing is uploaded. The only network traffic is the latency probe, a DNS lookup,
+  and the optional `--speed` download.
 
-`internal/check/` altına `func(ctx, Options) Result` imzalı bir fonksiyon yaz ve
-`check.go` içindeki `All()` listesine ekle. Ayrıştırma mantığını ayrı fonksiyona koyup
-`check_test.go` içinde test et.
+## Adding a module
 
-## Yol haritası
+Write a `func(ctx, Options) Result` in `internal/check/`, add it to `All()` in `check.go`,
+add its texts to **both** languages in `internal/i18n/catalog.go` (a test makes sure the two
+catalogs stay in sync), and unit-test the parsing logic.
 
-- [ ] `--fix`: düzeltilebilen sorunlar için, her adımda onay isteyerek
-- [ ] AUR paketi
-- [ ] Sıcaklık ve fan (`sensors`) modülü
-- [ ] Wi-Fi sinyal kalitesi
+## Roadmap
 
-## Lisans
+- [ ] `--fix` for fixable problems, asking before every step
+- [ ] AUR package
+- [ ] Temperature and fan (`sensors`) module
+- [ ] Wi-Fi signal quality
+
+## License
 
 [MIT](LICENSE) © 2026 vam0laa

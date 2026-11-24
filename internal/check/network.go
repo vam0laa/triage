@@ -2,19 +2,21 @@ package check
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"sort"
 	"time"
+
+	"github.com/vam0laa/vamola-doctor/internal/i18n"
 )
 
-// Network gecikme, DNS ve (isteğe bağlı) indirme hızını ölçer.
+// Network measures latency, DNS and (optionally) download speed.
 func Network(ctx context.Context, o Options) Result {
+	t := i18n.T
 	r := Result{Name: "network", Status: OK}
 
-	// Gecikme: 1.1.1.1:443'e 3 TCP bağlantısı, medyan.
+	// Latency: three TCP connects to 1.1.1.1:443, take the median.
 	var times []time.Duration
 	for i := 0; i < 3; i++ {
 		start := time.Now()
@@ -27,12 +29,12 @@ func Network(ctx context.Context, o Options) Result {
 	}
 	if len(times) == 0 {
 		r.Status = Fail
-		r.Summary = "internete ulaşılamıyor"
+		r.Summary = t("net.down")
 		return r
 	}
 	sort.Slice(times, func(i, j int) bool { return times[i] < times[j] })
 	med := times[len(times)/2]
-	r.Details = append(r.Details, fmt.Sprintf("gecikme: %d ms (%d/3 başarılı)", med.Milliseconds(), len(times)))
+	r.Details = append(r.Details, t("net.latency", med.Milliseconds(), len(times)))
 	if med > 150*time.Millisecond || len(times) < 3 {
 		r.Status = worst(r.Status, Warn)
 	}
@@ -43,27 +45,27 @@ func Network(ctx context.Context, o Options) Result {
 	start := time.Now()
 	if _, err := net.DefaultResolver.LookupHost(rc, "archlinux.org"); err != nil {
 		r.Status = worst(r.Status, Fail)
-		r.Details = append(r.Details, "DNS çözümleme başarısız: "+err.Error())
+		r.Details = append(r.Details, t("net.dns_fail", err.Error()))
 	} else {
-		r.Details = append(r.Details, fmt.Sprintf("DNS: çalışıyor (%d ms)", time.Since(start).Milliseconds()))
+		r.Details = append(r.Details, t("net.dns_ok", time.Since(start).Milliseconds()))
 	}
 
 	if o.Speed {
 		if mbit, err := speed(ctx); err != nil {
 			r.Status = worst(r.Status, Warn)
-			r.Details = append(r.Details, "hız testi yapılamadı: "+err.Error())
+			r.Details = append(r.Details, t("net.speed_fail", err.Error()))
 		} else {
-			r.Details = append(r.Details, fmt.Sprintf("indirme: %.1f Mbit/sn", mbit))
+			r.Details = append(r.Details, t("net.speed", mbit))
 		}
 	}
 
 	switch r.Status {
 	case OK:
-		r.Summary = fmt.Sprintf("bağlantı sağlıklı, gecikme %d ms", med.Milliseconds())
+		r.Summary = t("net.ok", med.Milliseconds())
 	case Warn:
-		r.Summary = "bağlantı var ama yavaş ya da dengesiz"
+		r.Summary = t("net.warn")
 	default:
-		r.Summary = "ağ sorunu var"
+		r.Summary = t("net.fail")
 	}
 	return r
 }

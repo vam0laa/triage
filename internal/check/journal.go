@@ -2,12 +2,13 @@ package check
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/vam0laa/vamola-doctor/internal/i18n"
 )
 
-// harmless bilinen, zararsız günlük satırlarıdır. Gerçek hatalardan ayrılır.
+// harmless lists known, benign journal lines that are separated from real errors.
 var harmless = []*regexp.Regexp{
 	regexp.MustCompile(`ACPI BIOS Error \(bug\)`),
 	regexp.MustCompile(`ACPI Error: AE_`),
@@ -19,35 +20,36 @@ var harmless = []*regexp.Regexp{
 	regexp.MustCompile(`Couldn't start kglobalaccel from org\.kde\.kglobalaccel\.service`),
 }
 
-// classify satırları (zararsız, gerçek) olarak ayırır; boş satırları yok sayar.
-func classify(lines []string) (ok, real []string) {
+// classify splits lines into (harmless, real); blank lines are dropped.
+func classify(in []string) (known, unknown []string) {
 next:
-	for _, l := range lines {
+	for _, l := range in {
 		l = strings.TrimSpace(l)
 		if l == "" {
 			continue
 		}
 		for _, re := range harmless {
 			if re.MatchString(l) {
-				ok = append(ok, l)
+				known = append(known, l)
 				continue next
 			}
 		}
-		real = append(real, l)
+		unknown = append(unknown, l)
 	}
 	return
 }
 
-// Journal bu boot'taki hata (öncelik 3 ve üstü) kayıtlarını inceler.
+// Journal inspects error-level (priority 3 and above) entries of the current boot.
 func Journal(ctx context.Context, _ Options) Result {
+	t := i18n.T
 	out, err := run(ctx, "journalctl", "-p", "3", "-b", "--no-pager", "-o", "cat")
 	if err != nil && out == "" {
-		return Result{Name: "journal", Status: Skip, Summary: "günlük okunamadı (systemd-journal grubunda mısın?)"}
+		return Result{Name: "journal", Status: Skip, Summary: t("jr.denied")}
 	}
 	known, unknown := classify(strings.Split(out, "\n"))
 	r := Result{Name: "journal", Status: OK}
 	if len(known) > 0 {
-		r.Details = append(r.Details, fmt.Sprintf("%d zararsız bilinen uyarı yok sayıldı (ACPI, dbus...)", len(known)))
+		r.Details = append(r.Details, t("jr.ignored", len(known)))
 	}
 	if len(unknown) > 0 {
 		r.Status = Warn
@@ -56,17 +58,17 @@ func Journal(ctx context.Context, _ Options) Result {
 			shown = shown[:8]
 		}
 		for _, l := range shown {
-			if len(l) > 140 {
-				l = l[:140] + "…"
+			if len([]rune(l)) > 120 {
+				l = string([]rune(l)[:120]) + "…"
 			}
 			r.Details = append(r.Details, "• "+l)
 		}
 		if len(unknown) > len(shown) {
-			r.Details = append(r.Details, fmt.Sprintf("… ve %d satır daha", len(unknown)-len(shown)))
+			r.Details = append(r.Details, t("jr.more", len(unknown)-len(shown)))
 		}
-		r.Summary = fmt.Sprintf("%d incelenmesi gereken hata kaydı", len(unknown))
+		r.Summary = t("jr.warn", len(unknown))
 	} else {
-		r.Summary = "bilinmeyen hata kaydı yok"
+		r.Summary = t("jr.ok")
 	}
 	return r
 }

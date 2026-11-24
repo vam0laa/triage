@@ -1,3 +1,3 @@
 module github.com/vam0laa/vamola-doctor
 
-go 1.27.4
+go 1.22
