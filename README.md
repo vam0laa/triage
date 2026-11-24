@@ -79,4 +79,4 @@ Betiklerde ve cron/systemd zamanlayıcılarında kullanılabilir.
 
 ## Lisans
 
-Henüz seçilmedi.
+[MIT](LICENSE) © 2026 vam0laa
