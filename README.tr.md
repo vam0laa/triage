@@ -11,58 +11,34 @@ zararsız log gürültüsünü (ACPI, dbus...) gerçek hatalardan ayırır.
 
 🇬🇧 [English README](README.md)
 
-```
-╭──────────────────────────────────────────────────────────────────╮
-│                                                                  │
-│                       vamola-doctor v0.2.0                       │
-│           Arch Linux + Hyprland sistem sağlık kontrolü           │
-│                                                                  │
-╰──────────────────────────────────────────────────────────────────╯
-
- ✔  Ağ                      bağlantı sağlıklı, gecikme 10 ms
-    ├─ gecikme: 10 ms (3/3 başarılı)
-    └─ DNS: çalışıyor (1 ms)
-
- ✔  Disk                    tüm bölümlerde yeterli alan var
-    ├─ /              btrfs    1.6% dolu  (937.8 GB boş / 952.9 GB)
-    │   btrfs hata sayaçları: temiz
-    └─ /boot          vfat    18.3% dolu  (834.6 MB boş / 1022.0 MB)
-
- ✔  Bellek                  bellek rahat, %47 boş
-    ├─ RAM: 6.9 GB kullanılabilir / 14.9 GB (%47 boş)
-    └─ Swap: %0 kullanımda (4.0 GB)
-
- ✔  Hyprland                Hyprland sağlıklı, config temiz
-    ├─ sürüm: v0.57.2
-    ├─ config: hata yok
-    └─ eDP-1: 2880x1800@120Hz, ölçek 1.67
-
- ⚠  Paketler                paket temizliği önerilir
-    ├─ 6 yetim paket: cli11, extra-cmake-modules, html2markdown-debug, python-pillow, …
-    │   inceleyip kaldırmak için: pacman -Rns $(pacman -Qdtq)
-    ├─ bekleyen güncelleme: 0 (son senkronizasyona göre)
-    └─ paket önbelleği: 2.7 GB
-
-╭─ Özet ───────────────────────────────────────────────────────────╮
-│                                                                  │
-│ sorunsuz 4 · uyarı 1 · hata 0 · atlandı 0                        │
-│                                                                  │
-│ Sağlık puanı  ██████████████████████░░  92%                      │
-│ Genel olarak iyi, birkaç şeye bakmakta fayda var.                │
-│                                                                  │
-╰──────────────────────────────────────────────────────────────────╯
-```
+![Terminalde vamola-doctor](docs/screenshot.png)
 
 ## Kurulum
+
+**Hazır binary** (Go gerekmez), [son sürümden](https://github.com/vam0laa/vamola-doctor/releases/latest):
+
+```bash
+curl -L https://github.com/vam0laa/vamola-doctor/releases/latest/download/vamola-doctor-linux-amd64.tar.gz | tar xz vamola-doctor
+sudo install -m755 vamola-doctor /usr/local/bin/
+```
+
+(ARM için `vamola-doctor-linux-arm64.tar.gz` mevcut.)
+
+**Go ile:**
+
+```bash
+go install github.com/vam0laa/vamola-doctor/cmd/vamola-doctor@latest
+```
+
+**Kaynaktan:**
 
 ```bash
 git clone https://github.com/vam0laa/vamola-doctor
 cd vamola-doctor
-go build -o vamola-doctor ./cmd/vamola-doctor
-sudo install -m755 vamola-doctor /usr/local/bin/
+make build && sudo install -m755 vamola-doctor /usr/local/bin/
 ```
 
-Gereken: `go`. İsteğe bağlı: SMART modülü için `smartmontools`.
+İsteğe bağlı: SMART modülü için `smartmontools`.
 
 ## Kullanım
 
