@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 // parseMeminfo turns /proc/meminfo into a map of values in kB.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 // Services lists failed systemd units (system and user).

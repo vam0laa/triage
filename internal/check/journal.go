@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 // harmless lists known, benign journal lines that are separated from real errors.

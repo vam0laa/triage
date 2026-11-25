@@ -1,6 +1,8 @@
 package i18n
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 )
@@ -48,5 +50,15 @@ func TestTFallback(t *testing.T) {
 	}
 	if T("net.down") != "internete ulaşılamıyor" {
 		t.Error("TR lookup failed")
+	}
+}
+
+func TestSavedFallsBackToTheOldToolName(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	os.MkdirAll(filepath.Join(dir, "vamola-doctor"), 0o755)
+	os.WriteFile(filepath.Join(dir, "vamola-doctor", "lang"), []byte("tr\n"), 0o644)
+	if l, ok := Saved(); !ok || l != TR {
+		t.Fatalf("the language chosen under the old name must still be used, got %v %v", l, ok)
 	}
 }

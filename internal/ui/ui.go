@@ -11,8 +11,8 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"github.com/vam0laa/vamola-doctor/internal/check"
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/check"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 // Style controls how the report is drawn.
@@ -159,7 +159,7 @@ func Render(w io.Writer, version string, cs []check.Check, rs []check.Result, s 
 	// Banner
 	fmt.Fprint(w, s.box("", []string{
 		"",
-		s.center(s.paint(cBold+";"+cAccent, "vamola-doctor") + " " + s.paint(cDim, "v"+version)),
+		s.center(s.paint(cBold+";"+cAccent, "triage") + " " + s.paint(cDim, "v"+version)),
 		s.center(s.paint(cDim, i18n.T("cli.subtitle"))),
 		"",
 	}))

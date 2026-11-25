@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 // dirSize returns the total size of a directory in bytes, skipping unreadable parts.

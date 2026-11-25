@@ -1,0 +1,21 @@
+name: Bug report
+description: A check is wrong, missing or misleading
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output of `triage --json` (remove anything private)
+      render: json
+  - type: input
+    id: version
+    attributes:
+      label: Version (`triage --version`) and distribution
+    validations:
+      required: true

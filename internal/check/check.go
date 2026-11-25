@@ -1,4 +1,4 @@
-// Package check contains the health checks of vamola-doctor.
+// Package check contains the health checks of triage.
 // Every check is read-only: it never changes anything on the system.
 package check
 
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 // Status is the outcome of a check. A higher value is worse (except Skip).

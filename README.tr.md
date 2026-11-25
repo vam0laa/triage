@@ -1,4 +1,4 @@
-# vamola-doctor
+# triage
 
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -6,36 +6,38 @@
 
 **Arch Linux + Hyprland için tek komutluk, salt okunur sistem sağlık kontrolü.**
 
+> `triage`, v0.2.0'a kadar `vamola-doctor` adını taşıyordu. Eski depo adresi buraya yönlenir ve eski adla seçtiğin dil korunur.
+
 Yeni kurduğun sistemde "her şey yolunda mı?" sorusuna saniyeler içinde cevap verir ve
 zararsız log gürültüsünü (ACPI, dbus...) gerçek hatalardan ayırır.
 
 🇬🇧 [English README](README.md)
 
-![Terminalde vamola-doctor](docs/screenshot.png)
+![Terminalde triage](docs/screenshot.png)
 
 ## Kurulum
 
-**Hazır binary** (Go gerekmez), [son sürümden](https://github.com/vam0laa/vamola-doctor/releases/latest):
+**Hazır binary** (Go gerekmez), [son sürümden](https://github.com/vam0laa/triage/releases/latest):
 
 ```bash
-curl -L https://github.com/vam0laa/vamola-doctor/releases/latest/download/vamola-doctor-linux-amd64.tar.gz | tar xz vamola-doctor
-sudo install -m755 vamola-doctor /usr/local/bin/
+curl -L https://github.com/vam0laa/triage/releases/latest/download/triage-linux-amd64.tar.gz | tar xz triage
+sudo install -m755 triage /usr/local/bin/
 ```
 
-(ARM için `vamola-doctor-linux-arm64.tar.gz` mevcut.)
+(ARM için `triage-linux-arm64.tar.gz` mevcut.)
 
 **Go ile:**
 
 ```bash
-go install github.com/vam0laa/vamola-doctor/cmd/vamola-doctor@latest
+go install github.com/vam0laa/triage/cmd/triage@latest
 ```
 
 **Kaynaktan:**
 
 ```bash
-git clone https://github.com/vam0laa/vamola-doctor
-cd vamola-doctor
-make build && sudo install -m755 vamola-doctor /usr/local/bin/
+git clone https://github.com/vam0laa/triage
+cd triage
+make build && sudo install -m755 triage /usr/local/bin/
 ```
 
 İsteğe bağlı: SMART modülü için `smartmontools`.
@@ -43,17 +45,17 @@ make build && sudo install -m755 vamola-doctor /usr/local/bin/
 ## Kullanım
 
 ```bash
-vamola-doctor                    # tüm kontroller
-vamola-doctor --only disk,smart  # seçili modüller
-vamola-doctor --speed            # indirme hızı testi de yap (~10 MB)
-vamola-doctor --json             # makine okunur çıktı
-vamola-doctor --list             # modülleri listele
-vamola-doctor --lang en          # bu çalıştırmada İngilizce
-vamola-doctor --choose-lang      # dili yeniden seç ve kaydet
-sudo vamola-doctor --only smart  # SMART root ister
+triage                    # tüm kontroller
+triage --only disk,smart  # seçili modüller
+triage --speed            # indirme hızı testi de yap (~10 MB)
+triage --json             # makine okunur çıktı
+triage --list             # modülleri listele
+triage --lang en          # bu çalıştırmada İngilizce
+triage --choose-lang      # dili yeniden seç ve kaydet
+sudo triage --only smart  # SMART root ister
 ```
 
-İlk etkileşimli çalıştırmada dilini (English / Türkçe) sorar ve `~/.config/vamola-doctor/lang`
+İlk etkileşimli çalıştırmada dilini (English / Türkçe) sorar ve `~/.config/triage/lang`
 dosyasına kaydeder. Terminal yoksa (pipe, cron) sistem diline bakar.
 
 **Çıkış kodu:** `0` temiz · `1` uyarı var · `2` hata var · `64` hatalı kullanım.

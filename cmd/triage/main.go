@@ -1,4 +1,4 @@
-// vamola-doctor: a read-only system health check for Arch Linux + Hyprland.
+// triage: a read-only system health check for Arch Linux + Hyprland.
 package main
 
 import (
@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vam0laa/vamola-doctor/internal/check"
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
-	"github.com/vam0laa/vamola-doctor/internal/ui"
+	"github.com/vam0laa/triage/internal/check"
+	"github.com/vam0laa/triage/internal/i18n"
+	"github.com/vam0laa/triage/internal/ui"
 )
 
-const version = "0.2.0"
+const version = "0.3.0"
 
 func isTTY(f *os.File) bool {
 	st, err := f.Stat()
@@ -116,7 +116,7 @@ func main() {
 	flag.Parse()
 
 	if *showVer {
-		fmt.Println("vamola-doctor", version)
+		fmt.Println("triage", version)
 		return
 	}
 	all := check.All()

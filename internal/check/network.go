@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 // Network measures latency, DNS and (optionally) download speed.

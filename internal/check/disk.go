@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/vam0laa/vamola-doctor/internal/i18n"
+	"github.com/vam0laa/triage/internal/i18n"
 )
 
 var realFS = map[string]bool{"ext4": true, "btrfs": true, "xfs": true, "f2fs": true, "vfat": true, "ntfs3": true, "exfat": true}

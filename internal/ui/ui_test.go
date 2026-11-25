@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vam0laa/vamola-doctor/internal/check"
+	"github.com/vam0laa/triage/internal/check"
 )
 
 func TestVisibleLenIgnoresANSI(t *testing.T) {

@@ -69,7 +69,7 @@ func prefPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(d, "vamola-doctor", "lang"), nil
+	return filepath.Join(d, "triage", "lang"), nil
 }
 
 // Saved returns the language stored by a previous run, if any.
@@ -80,7 +80,13 @@ func Saved() (Lang, bool) {
 	}
 	b, err := os.ReadFile(p)
 	if err != nil {
-		return EN, false
+		// the tool used to be called vamola-doctor: keep the language the user already chose
+		if d, derr := os.UserConfigDir(); derr == nil {
+			b, err = os.ReadFile(filepath.Join(d, "vamola-doctor", "lang"))
+		}
+		if err != nil {
+			return EN, false
+		}
 	}
 	return Parse(string(b))
 }

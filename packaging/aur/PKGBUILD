@@ -1,13 +1,15 @@
 # Maintainer: vam0laa <283932871+vam0laa@users.noreply.github.com>
-pkgname=vamola-doctor
-pkgver=0.2.0
+pkgname=triage
+pkgver=0.3.0
 pkgrel=1
 pkgdesc='Read-only health check for Arch Linux + Hyprland'
 arch=('x86_64' 'aarch64')
-url='https://github.com/vam0laa/vamola-doctor'
+url='https://github.com/vam0laa/triage'
 license=('MIT')
 makedepends=('go')
 options=('!debug')
+replaces=('vamola-doctor')
+conflicts=('vamola-doctor')
 optdepends=('smartmontools: disk SMART health module')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('6b6f9019bc3920864994947041c45e0dd3c4793a1ec697a4930850470fb62941')
@@ -15,7 +17,7 @@ sha256sums=('6b6f9019bc3920864994947041c45e0dd3c4793a1ec697a4930850470fb62941')
 build() {
   cd "$pkgname-$pkgver"
   export CGO_ENABLED=0
-  go build -trimpath -mod=readonly -ldflags "-s -w" -o vamola-doctor ./cmd/vamola-doctor
+  go build -trimpath -mod=readonly -ldflags "-s -w" -o triage ./cmd/triage
 }
 
 check() {
@@ -25,7 +27,7 @@ check() {
 
 package() {
   cd "$pkgname-$pkgver"
-  install -Dm755 vamola-doctor "$pkgdir/usr/bin/vamola-doctor"
+  install -Dm755 triage "$pkgdir/usr/bin/triage"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 }
