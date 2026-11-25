@@ -1,6 +1,6 @@
 pkgbase = triage
 	pkgdesc = Read-only health check for Arch Linux + Hyprland
-	pkgver = 0.2.0
+	pkgver = 0.3.0
 	pkgrel = 1
 	url = https://github.com/vam0laa/triage
 	arch = x86_64
@@ -8,8 +8,10 @@ pkgbase = triage
 	license = MIT
 	makedepends = go
 	optdepends = smartmontools: disk SMART health module
+	conflicts = vamola-doctor
+	replaces = vamola-doctor
 	options = !debug
-	source = triage-0.2.0.tar.gz::https://github.com/vam0laa/triage/archive/refs/tags/v0.2.0.tar.gz
-	sha256sums = 6b6f9019bc3920864994947041c45e0dd3c4793a1ec697a4930850470fb62941
+	source = triage-0.3.0.tar.gz::https://github.com/vam0laa/triage/archive/refs/tags/v0.3.0.tar.gz
+	sha256sums = 3a1284d67eac851284ae578050895839a37e7e480d2de63cd2d44beed984e4e5
 
 pkgname = triage

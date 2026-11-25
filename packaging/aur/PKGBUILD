@@ -12,7 +12,7 @@ replaces=('vamola-doctor')
 conflicts=('vamola-doctor')
 optdepends=('smartmontools: disk SMART health module')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('6b6f9019bc3920864994947041c45e0dd3c4793a1ec697a4930850470fb62941')
+sha256sums=('3a1284d67eac851284ae578050895839a37e7e480d2de63cd2d44beed984e4e5')
 
 build() {
   cd "$pkgname-$pkgver"
